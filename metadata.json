@@ -1,0 +1,6 @@
+{
+  "name": "AI Công Sở — AI Cho Công Việc Thật",
+  "description": "Nền tảng hướng dẫn nhân viên văn phòng Việt Nam ứng dụng AI (Claude, ChatGPT, Gemini) vào tình huống công việc thực tế kèm thư viện prompt, lộ trình 30 ngày và trình quản trị non-tech.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

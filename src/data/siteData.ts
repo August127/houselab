@@ -66,6 +66,7 @@ export interface PromptItem {
   updatedAt: string;
   addedAt?: string;
   copyCount: number;
+  viewCount?: number;
   agentType?: AIAgentType;
 }
 
@@ -86,6 +87,7 @@ export interface ArticleItem {
   tools: AIToolName[];
   updatedAt: string;
   readTimeMinutes: number;
+  viewCount?: number;
   situationContext: string;
   badPrompt: string;
   goodPrompt: string;
@@ -217,6 +219,7 @@ Yêu cầu: Soạn 2 phương án email phản hồi bằng tiếng Việt (Phư
     securityTip: 'Không dán số hợp đồng thật, bảng giá vốn nội bộ hoặc số điện thoại cá nhân của khách vào AI.',
     updatedAt: '18/10/2026',
     copyCount: 1420,
+    viewCount: 2840,
   },
   {
     id: 'prompt-02',
@@ -246,6 +249,7 @@ Hãy tổng hợp thành Biên bản cuộc họp ngắn gọn, súc tích theo 
     securityTip: 'Thay tên dự án mật bằng Dự án A/B và làm tròn hoặc ẩn số liệu tài chính chưa công bố.',
     updatedAt: '15/10/2026',
     copyCount: 1895,
+    viewCount: 3790,
   },
   {
     id: 'prompt-03',
@@ -274,6 +278,7 @@ Yêu cầu thực hiện:
     securityTip: 'Chỉ dán dòng Tổng hợp (Subtotal/Total) hoặc nhân số liệu với một hệ số không đổi. Tuyệt đối không tải file Excel chứa mã số thuế và lương nhân viên.',
     updatedAt: '19/10/2026',
     copyCount: 1640,
+    viewCount: 3280,
   },
   {
     id: 'prompt-04',
@@ -300,6 +305,7 @@ Hãy giúp tôi:
     securityTip: 'Không đưa thông tin quỹ lương nội bộ của các nhân sự hiện tại vào prompt.',
     updatedAt: '12/10/2026',
     copyCount: 980,
+    viewCount: 1960,
   },
   {
     id: 'prompt-05',
@@ -328,6 +334,7 @@ Hãy chuyển hóa thành bộ nội dung đăng trong tuần theo công thức 
     securityTip: 'Luôn dùng ví dụ giả lập khi quay màn hình TikTok/Facebook.',
     updatedAt: '10/10/2026',
     copyCount: 1510,
+    viewCount: 3020,
   },
   {
     id: 'prompt-06',
@@ -358,6 +365,7 @@ Yêu cầu:
     securityTip: 'Không dán mật khẩu wifi nội bộ hoặc mã khóa cửa văn phòng vào nội dung prompt.',
     updatedAt: '05/10/2026',
     copyCount: 1120,
+    viewCount: 2240,
   },
   {
     id: 'prompt-07',
@@ -384,6 +392,7 @@ Hãy thực hiện quy trình kiểm chứng 3 bước nghiêm ngặt:
     securityTip: 'Luôn kiểm tra lại số hiệu Nghị định/Thông tư trên cổng văn bản pháp luật trước khi trình ký Sếp.',
     updatedAt: '20/10/2026',
     copyCount: 1340,
+    viewCount: 2680,
   },
   {
     id: 'prompt-08',
@@ -413,6 +422,7 @@ Yêu cầu:
     securityTip: 'Chỉ cần mô tả tên cột (Cột A, Cột B...), không cần copy toàn bộ bảng dữ liệu thật của công ty.',
     updatedAt: '21/10/2026',
     copyCount: 2150,
+    viewCount: 4300,
   },
   {
     id: 'prompt-09',
@@ -438,6 +448,7 @@ Hãy lập Bảng phân bổ công việc tuần theo cấu trúc:
     securityTip: 'Chỉ ghi chức danh (Sales Admin, Kế toán...), không cần nhập họ tên đầy đủ và mức lương thưởng cá nhân.',
     updatedAt: '21/10/2026',
     copyCount: 640,
+    viewCount: 1280,
   },
   {
     id: 'prompt-10',
@@ -464,6 +475,7 @@ Yêu cầu rà soát:
     securityTip: 'Luôn xóa tên pháp nhân, mã số thuế và giá trị tiền thật trước khi dán điều khoản hợp đồng.',
     updatedAt: '21/10/2026',
     copyCount: 890,
+    viewCount: 1780,
   },
   {
     id: 'prompt-11',
@@ -494,6 +506,7 @@ QUY TRÌNH THỰC THI CỦA AGENT (BẮT BUỘC TUÂN THỦ):
     securityTip: 'Không đưa kế hoạch giá thầu bí mật hoặc danh sách khách hàng nội bộ của công ty vào câu lệnh tìm kiếm web công khai.',
     updatedAt: '21/10/2026',
     copyCount: 1480,
+    viewCount: 2960,
   },
   {
     id: 'prompt-12',
@@ -526,6 +539,7 @@ HÃY THỰC HIỆN THEO VÒNG LẶP KIỂM TRA 4 BƯỚC:
     securityTip: 'Luôn xóa cột Họ tên, CCCD, Số tài khoản và Mã số thuế trước khi tải bảng tính lên Data Agent.',
     updatedAt: '21/10/2026',
     copyCount: 1620,
+    viewCount: 3240,
   },
   {
     id: 'prompt-13',
@@ -559,6 +573,7 @@ QUY TẮC RÀNG BUỘC NGHIÊM NGẶT CỦA RAG AGENT:
     securityTip: 'Khi tạo kho tài liệu chung cho phòng ban, hãy tách riêng các văn bản phổ biến cho toàn công ty khỏi các quyết định lương thưởng mật.',
     updatedAt: '21/10/2026',
     copyCount: 1390,
+    viewCount: 2780,
   },
   {
     id: 'prompt-14',
@@ -597,6 +612,7 @@ YÊU CẦU XỬ LÝ TỰ ĐỘNG THEO 3 KHỐI CỐ ĐỊNH (KHÔNG THÊM LỜI 
     securityTip: 'Luôn giữ bước "Nhân viên duyệt bản nháp" trước khi gửi báo giá chính thức cho khách hàng.',
     updatedAt: '21/10/2026',
     copyCount: 1190,
+    viewCount: 2380,
   },
   {
     id: 'prompt-15',
@@ -630,12 +646,13 @@ YÊU CẦU XỬ LÝ CHÍNH XÁC:
     securityTip: 'Kiểm tra kỹ các con số ngân sách trong mục [Cần xác nhận lại] trước khi gửi biên bản lên nhóm chung.',
     updatedAt: '21/10/2026',
     copyCount: 1310,
+    viewCount: 2620,
   },
   {
     id: 'prompt-16',
     title: '[Agent Script & Macro Văn phòng] Viết mã Google Apps Script / VBA tự động hóa báo cáo cho người không biết code',
     situation: 'Cần tự động gộp nhiều sheet báo cáo, tô màu dòng quá hạn hoặc tự động tạo file từ mẫu mà không biết lập trình.',
-    pillar: 'Công cụ và so sánh',
+    pillar: 'Công thức theo vị trí',
     role: 'Hành chính',
     level: 'Nâng cao',
     recommendedTools: ['Codex', 'Claude', 'ChatGPT'],
@@ -661,6 +678,7 @@ YÊU CẦU BẮT BUỘC ĐỐI VỚI AGENT:
     securityTip: 'Luôn tạo một bản sao (Make a copy) của file Excel/Google Sheets để chạy thử đoạn mã lần đầu trước khi áp dụng trên file chính thức.',
     updatedAt: '21/10/2026',
     copyCount: 1275,
+    viewCount: 2550,
   },
 ];
 
@@ -675,6 +693,7 @@ export const INITIAL_ARTICLES: ArticleItem[] = [
     tools: ['Claude', 'ChatGPT', 'Gemini'],
     updatedAt: 'Cập nhật 10/2026',
     readTimeMinutes: 5,
+    viewCount: 4280,
     situationContext:
       '90% nhân viên văn phòng mới dùng AI thường gõ những câu ngắn ngủn như "Viết cho tôi email xin lỗi khách hàng giao hàng trễ". Kết quả là AI trả về một bức thư dài dòng, sặc mùi văn dịch nước ngoài ("Tôi hy vọng bức thư này tìm thấy bạn..."), cuối cùng bạn mất thêm 30 phút tự viết lại.',
     badPrompt: 'Viết email xin lỗi khách hàng vì giao hàng trễ 2 ngày.',
@@ -752,6 +771,7 @@ export const INITIAL_ARTICLES: ArticleItem[] = [
     tools: ['Claude', 'ChatGPT', 'Gemini'],
     updatedAt: 'Cập nhật 10/2026',
     readTimeMinutes: 6,
+    viewCount: 3850,
     situationContext:
       'Mỗi tuần lại có một bản cập nhật AI mới khiến dân văn phòng hoang mang: Nên dùng công cụ nào? Có cần mua gói trả phí 500.000đ/tháng không? Thực tế, 85% công việc văn phòng hàng ngày có thể giải quyết trọn vẹn bằng bản miễn phí nếu bạn biết giao đúng việc cho đúng công cụ.',
     badPrompt: 'Công cụ AI nào thông minh nhất hiện nay?',
@@ -827,6 +847,7 @@ export const INITIAL_ARTICLES: ArticleItem[] = [
     tools: ['Claude', 'ChatGPT', 'Gemini'],
     updatedAt: 'Cập nhật 10/2026',
     readTimeMinutes: 5,
+    viewCount: 3190,
     situationContext:
       'Rất nhiều nhân viên văn phòng vì vội hoàn thành báo cáo đã copy nguyên bảng lương kèm số CCCD, hoặc tải cả file hợp đồng kinh tế có tên khách hàng chiến lược lên AI công cộng. Chỉ một sơ suất nhỏ có thể vi phạm quy định bảo mật của công ty và Luật Bảo vệ dữ liệu cá nhân.',
     badPrompt: 'Tải nguyên file "Bang_Luong_Thang_10_Full_CCCD.xlsx" lên AI và bảo: Kiểm tra giúp tôi xem cột thuế TNCN tính đúng chưa.',
@@ -903,6 +924,7 @@ export const INITIAL_ARTICLES: ArticleItem[] = [
     tools: ['Claude', 'ChatGPT', 'Gemini'],
     updatedAt: 'Cập nhật 10/2026',
     readTimeMinutes: 4,
+    viewCount: 2940,
     situationContext:
       'Mỗi sáng đến văn phòng, bạn chưa kịp làm việc chuyên môn đã mất 2 tiếng cho những việc vụn vặt: trả lời email lặp đi lặp lại, tổng hợp ghi chú họp hôm qua, viết thông báo nhắc lịch, chỉnh lại câu chữ báo cáo và tra cứu công thức bảng tính.',
     badPrompt: 'Hãy làm giúp tôi công việc hành chính hôm nay.',

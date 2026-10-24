@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArticleItem, AIToolName } from '../data/siteData';
-import { Check, Copy, X, Bookmark, ShieldCheck } from 'lucide-react';
+import { Check, Copy, X, Bookmark, ShieldCheck, Eye } from 'lucide-react';
 import { RoleIsometricArtwork } from './VisualCardArtwork';
 
 interface ArticleReaderModalProps {
@@ -45,6 +45,11 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({
               <span>{article.pillar}</span>
               <span aria-hidden="true">·</span>
               <span>Trình độ: {article.level}</span>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                <Eye className="w-3.5 h-3.5 text-slate-400" />
+                {(article.viewCount || 0).toLocaleString('vi-VN')} lượt xem
+              </span>
               <span aria-hidden="true">·</span>
               <span>{article.updatedAt}</span>
               <span aria-hidden="true">·</span>

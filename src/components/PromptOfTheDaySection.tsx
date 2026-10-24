@@ -13,6 +13,7 @@ import {
   Calendar,
   Wrench,
   Wand2,
+  Eye,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PromptCommunityBenchmarkStrip } from './PromptCommunityBenchmark';
@@ -314,8 +315,13 @@ export const PromptOfTheDaySection: React.FC<PromptOfTheDaySectionProps> = ({
                   Cấp độ: {prompt.level}
                 </span>
                 <span aria-hidden="true">·</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+                  <Eye className="w-3.5 h-3.5 text-slate-400" />
+                  {(prompt.viewCount || 0).toLocaleString('vi-VN')} lượt xem
+                </span>
+                <span aria-hidden="true">·</span>
                 <span className="font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
-                  {prompt.copyCount.toLocaleString('vi-VN')} lượt copy
+                  {prompt.copyCount.toLocaleString('vi-VN')} copy
                 </span>
                 <span aria-hidden="true">·</span>
                 <span>Thêm ngày {formattedAddedDate}</span>

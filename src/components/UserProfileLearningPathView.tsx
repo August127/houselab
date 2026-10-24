@@ -34,6 +34,13 @@ import {
   X,
   LayoutGrid,
   ListChecks,
+  Eye,
+  Compass,
+  Clock,
+  Trophy,
+  Zap,
+  TrendingUp,
+  Calendar,
 } from 'lucide-react';
 
 export interface UserProfileData {
@@ -220,6 +227,16 @@ export const UserProfileLearningPathView: React.FC<
     () => masteredIds.filter((id) => savedItemIds.has(id)).length,
     [masteredIds, savedItemIds]
   );
+  const masteredPromptsCount = useMemo(() => {
+    const promptIdSet = new Set(allPrompts.map((p) => p.id));
+    return masteredIds.filter((id) => promptIdSet.has(id) || id.startsWith('prompt-')).length;
+  }, [masteredIds, allPrompts]);
+
+  const masteredArticlesCount = useMemo(() => {
+    const articleIdSet = new Set(allArticles.map((a) => a.id));
+    return masteredIds.filter((id) => articleIdSet.has(id) || id.startsWith('art-')).length;
+  }, [masteredIds, allArticles]);
+
   const learningPathMasteryPct =
     totalSavedItems > 0 ? Math.round((masteredSavedCount / totalSavedItems) * 100) : 0;
 
@@ -249,6 +266,22 @@ export const UserProfileLearningPathView: React.FC<
   const nextRoadmapStep = useMemo(() => {
     return roadmap.find((step) => !completedRoadmapDays[step.dayRange]) || roadmap[0];
   }, [roadmap, completedRoadmapDays]);
+
+  // All remaining uncompleted roadmap steps in chronological order
+  const uncompletedRoadmapSteps = useMemo(() => {
+    return roadmap.filter((step) => !completedRoadmapDays[step.dayRange]);
+  }, [roadmap, completedRoadmapDays]);
+
+  const completedRoadmapSteps = useMemo(() => {
+    return roadmap.filter((step) => !!completedRoadmapDays[step.dayRange]);
+  }, [roadmap, completedRoadmapDays]);
+
+  const handleScrollToNextRoadmap = () => {
+    const el = document.getElementById('next-roadmap-suggestions');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -494,11 +527,303 @@ export const UserProfileLearningPathView: React.FC<
       {/* ================================================================= */}
       <section>
         <LearningProgressChart
-          completedPromptsCount={Math.max(savedPrompts.length, masteredSavedCount)}
-          completedArticlesCount={savedArticles.length}
+          completedPromptsCount={masteredPromptsCount}
+          completedArticlesCount={masteredArticlesCount}
           roadmapCompletedCount={roadmapCompletedCount}
           onLogPractice={onNavigateToPrompts}
+          onExploreArticles={onNavigateToArticles}
+          onViewNextRoadmap={handleScrollToNextRoadmap}
         />
+      </section>
+
+      {/* ================================================================= */}
+      {/* 2B. NEXT 30-DAY ROADMAP MILESTONES POWERED BY RECHARTS INSIGHTS   */}
+      {/* ================================================================= */}
+      <section id="next-roadmap-suggestions" className="scroll-mt-6">
+        <div className="rounded-3xl border border-emerald-500/25 bg-gradient-to-b from-emerald-50/50 via-white to-white dark:from-emerald-950/25 dark:via-slate-900 dark:to-slate-900 p-6 md:p-8 shadow-xs space-y-6">
+          {/* Top Section Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <Compass className="w-4 h-4 text-emerald-600" />
+                Dựa Trên Dữ Liệu Recharts · Đề Xuất Học Tập Tiếp Theo
+              </div>
+              <h3 className="mt-1 font-display text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white flex flex-wrap items-center gap-2.5">
+                <span>Các ngày tiếp theo trong Lộ trình cần chinh phục</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 px-3 py-0.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 tabular-nums">
+                  <Zap className="w-3.5 h-3.5 text-emerald-600" />
+                  {uncompletedRoadmapSteps.length > 0
+                    ? `Còn ${uncompletedRoadmapSteps.length}/${roadmap.length} chặng chưa xong`
+                    : '100% Hoàn thành!'}
+                </span>
+              </h3>
+              <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
+                Phân tích từ biểu đồ đường Recharts: Bạn đã hoàn thành <strong>{roadmapCompletedCount}/{roadmap.length}</strong> chặng ({roadmapPct}%). 
+                Chinh phục các ngày tiếp theo dưới đây để đẩy đường tiến độ Recharts tuần này vươn lên đỉnh mới và tiết kiệm thêm thời gian công việc!
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={onNavigateToRoadmap}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors cursor-pointer"
+              >
+                <span>Xem toàn bộ 30 ngày</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* 30-Day Step Progress Tracker Bar */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                Tiến độ thực hiện Lộ trình 30 ngày:
+              </span>
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold tabular-nums">
+                {roadmapCompletedCount} / {roadmap.length} chặng ({roadmapPct}%)
+              </span>
+            </div>
+
+            {/* Stepper nodes */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {roadmap.map((step, idx) => {
+                const isDone = !!completedRoadmapDays[step.dayRange];
+                const isNext = uncompletedRoadmapSteps[0]?.dayRange === step.dayRange;
+
+                return (
+                  <button
+                    key={`roadmap-step-tracker-${step.dayRange}`}
+                    type="button"
+                    onClick={() => onToggleRoadmapDay(step.dayRange, step.title)}
+                    className={`flex flex-col justify-between p-2.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                      isDone
+                        ? 'border-emerald-500/50 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200'
+                        : isNext
+                        ? 'border-emerald-600 bg-white dark:bg-slate-900 shadow-md ring-2 ring-emerald-500/30'
+                        : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        {step.dayRange}
+                      </span>
+                      {isDone ? (
+                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-white text-[9px] font-black">
+                          ✓
+                        </span>
+                      ) : isNext ? (
+                        <span className="inline-flex items-center rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 text-[9px] font-bold animate-pulse">
+                          Kế tiếp
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">#{idx + 1}</span>
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs font-bold truncate" title={step.title}>
+                      {step.title}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Uncompleted Days Recommendation Cards */}
+          {uncompletedRoadmapSteps.length > 0 ? (
+            <div className="space-y-4 pt-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-emerald-600 text-white text-xs font-bold">
+                    →
+                  </span>
+                  <span>Chặng tiếp theo ưu tiên thực hành ({uncompletedRoadmapSteps.length} chặng chưa hoàn thành)</span>
+                </h4>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                  *Bấm hoàn thành sau khi thực hành để biểu đồ Recharts tự động ghi nhận
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {uncompletedRoadmapSteps.map((step, index) => {
+                  const isImmediateNext = index === 0;
+                  const linkedPrompt = step.linkedPromptId
+                    ? allPrompts.find((p) => p.id === step.linkedPromptId)
+                    : undefined;
+                  const linkedArticle = step.linkedArticleId
+                    ? allArticles.find((a) => a.id === step.linkedArticleId)
+                    : undefined;
+
+                  return (
+                    <div
+                      key={`uncompleted-step-${step.dayRange}`}
+                      className={`relative flex flex-col justify-between rounded-3xl border bg-white dark:bg-slate-900 p-5 shadow-xs transition-all hover:shadow-lg ${
+                        isImmediateNext
+                          ? 'border-emerald-500/70 dark:border-emerald-500/60 ring-2 ring-emerald-500/20 bg-gradient-to-b from-emerald-50/30 to-white dark:from-emerald-950/20 dark:to-slate-900'
+                          : 'border-slate-200/90 dark:border-slate-800'
+                      }`}
+                    >
+                      {isImmediateNext && (
+                        <div className="absolute -top-3 left-5 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm">
+                          <Flame className="w-3 h-3 text-amber-300" />
+                          <span>Chặng ưu tiên học hôm nay</span>
+                        </div>
+                      )}
+
+                      <div className="space-y-3.5 pt-1">
+                        {/* Header Badges */}
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center rounded-xl bg-emerald-600 text-white font-extrabold px-2.5 py-1 text-xs shadow-xs">
+                              {step.dayRange}
+                            </span>
+                            <span className="font-semibold text-slate-600 dark:text-slate-300 text-[11px]">
+                              {step.weekTitle.split(':')[0]}
+                            </span>
+                          </div>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            {step.timeEstimate}
+                          </span>
+                        </div>
+
+                        {/* Title & Objective */}
+                        <div>
+                          <h5 className="font-display text-base font-bold text-slate-900 dark:text-white line-clamp-2">
+                            {step.title}
+                          </h5>
+                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+                            {step.objective}
+                          </p>
+                        </div>
+
+                        {/* 15-Minute Action Task Box */}
+                        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 p-3 space-y-1">
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                            <Target className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Bài tập thực hành 15–20 phút:</span>
+                          </div>
+                          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                            {step.actionTask}
+                          </p>
+                        </div>
+
+                        {/* Linked Learning Resources (Prompt or Article) */}
+                        <div className="space-y-1.5 pt-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Tài nguyên học kèm có sẵn:
+                          </div>
+
+                          {linkedPrompt && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenPromptModal(linkedPrompt)}
+                              className="group/btn w-full flex items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/40 p-2.5 text-left text-xs transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <div className="truncate">
+                                  <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                                    Thực hành Prompt 3D:
+                                  </div>
+                                  <div className="font-bold text-slate-900 dark:text-white truncate">
+                                    {linkedPrompt.title}
+                                  </div>
+                                </div>
+                              </div>
+                              <ArrowRight className="w-3.5 h-3.5 text-emerald-600 shrink-0 group-hover/btn:translate-x-0.5 transition-transform" />
+                            </button>
+                          )}
+
+                          {linkedArticle && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenArticleModal(linkedArticle)}
+                              className="group/btn w-full flex items-center justify-between gap-2 rounded-xl border border-blue-500/30 bg-blue-50/60 dark:bg-blue-950/40 p-2.5 text-left text-xs transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/60 cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <BookOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                <div className="truncate">
+                                  <div className="text-[10px] text-blue-700 dark:text-blue-400 font-semibold">
+                                    Đọc bài tình huống:
+                                  </div>
+                                  <div className="font-bold text-slate-900 dark:text-white truncate">
+                                    {linkedArticle.title}
+                                  </div>
+                                </div>
+                              </div>
+                              <ArrowRight className="w-3.5 h-3.5 text-blue-600 shrink-0 group-hover/btn:translate-x-0.5 transition-transform" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Recharts Impact Note */}
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 rounded-xl px-2.5 py-1.5">
+                          <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>Đóng góp +1 mục vào đường tích lũy Recharts tuần này</span>
+                        </div>
+                      </div>
+
+                      {/* Footer Complete Milestone Trigger */}
+                      <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => onToggleRoadmapDay(step.dayRange, step.title)}
+                          className={`w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-xs ${
+                            isImmediateNext
+                              ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-md hover:shadow-lg'
+                              : 'border border-emerald-600/40 text-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/40 hover:bg-emerald-600 hover:text-white'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Đánh dấu đã hoàn thành chặng này</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Celebration when all 30 days are 100% completed */
+            <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-50 via-emerald-50 to-amber-50 dark:from-amber-950/20 dark:via-emerald-950/20 dark:to-amber-950/20 p-8 text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-500/20 text-amber-600 shadow-md">
+                <Trophy className="w-8 h-8" />
+              </div>
+              <div className="space-y-1.5 max-w-lg mx-auto">
+                <div className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  <Award className="w-4 h-4" />
+                  Chúc mừng bạn đã đạt cột mốc tối đa!
+                </div>
+                <h4 className="text-xl font-black text-slate-900 dark:text-white">
+                  Bạn đã hoàn thành trọn vẹn 100% Lộ trình 30 ngày AI Công Sở!
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Đường tiến độ Recharts của bạn đã ghi nhận toàn bộ 6 chặng cốt lõi. Bạn đã hoàn toàn làm chủ từ Nhập môn, Công thức 4 bước, Bảo mật dữ liệu cho đến phối hợp đa mô hình AI.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onNavigateToPrompts}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 cursor-pointer shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Tiếp tục thực hành Thư viện Prompt</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onNavigateToRoadmap}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <span>Xem lại toàn bộ Lộ trình 30 ngày</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* ================================================================= */}
@@ -797,6 +1122,11 @@ export const UserProfileLearningPathView: React.FC<
                               <span aria-hidden="true">·</span>
                               <span>{p.level}</span>
                               <span aria-hidden="true">·</span>
+                              <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                                <Eye className="w-3.5 h-3.5 text-slate-400" />
+                                {(p.viewCount || 0).toLocaleString('vi-VN')} xem
+                              </span>
+                              <span aria-hidden="true">·</span>
                               <span>Công cụ: {p.recommendedTools.join(', ')}</span>
                             </div>
 
@@ -873,6 +1203,10 @@ export const UserProfileLearningPathView: React.FC<
                             </span>
                             <span className="text-slate-500 dark:text-slate-400">
                               {p.level} · Khuyên dùng: {p.recommendedTools.join(', ')}
+                            </span>
+                            <span className="inline-flex items-center gap-1 font-medium text-slate-600 dark:text-slate-400 tabular-nums">
+                              <Eye className="w-3.5 h-3.5 text-slate-400" />
+                              {(p.viewCount || 0).toLocaleString('vi-VN')} xem
                             </span>
                             {isMastered && (
                               <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
@@ -1020,6 +1354,11 @@ export const UserProfileLearningPathView: React.FC<
                             <span>{art.level}</span>
                             <span aria-hidden="true">·</span>
                             <span>{art.readTimeMinutes} phút đọc</span>
+                            <span aria-hidden="true">·</span>
+                            <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                              <Eye className="w-3.5 h-3.5 text-slate-400" />
+                              {(art.viewCount || 0).toLocaleString('vi-VN')} lượt xem
+                            </span>
                           </div>
 
                           <h4 className="mt-1.5 text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-2">
@@ -1069,62 +1408,10 @@ export const UserProfileLearningPathView: React.FC<
           )}
 
         {/* =============================================================== */}
-        {/* SECTION C: PERSONALIZED NEXT STEPS & ROLE RECOMMENDATIONS       */}
+        {/* SECTION C: ROLE-BASED PERSONALIZED RECOMMENDATIONS              */}
         {/* =============================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4">
-          {/* Next Step in 30-Day Roadmap */}
-          {nextRoadmapStep && (
-            <div className="lg:col-span-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 flex flex-col justify-between space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                    Chặng tiếp theo trong Lộ trình 30 ngày
-                  </span>
-                  <span className="text-xs font-semibold text-slate-500">
-                    {nextRoadmapStep.dayRange}
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  {nextRoadmapStep.title}
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {nextRoadmapStep.objective}
-                </p>
-                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-xs text-slate-700 dark:text-slate-300">
-                  <strong>Bài tập 15 phút hôm nay:</strong> {nextRoadmapStep.practiceTask}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onToggleRoadmapDay(
-                      nextRoadmapStep.dayRange,
-                      nextRoadmapStep.title
-                    )
-                  }
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-500 cursor-pointer"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {completedRoadmapDays[nextRoadmapStep.dayRange]
-                    ? 'Đã hoàn thành chặng này'
-                    : 'Đánh dấu hoàn thành'}
-                </button>
-                <button
-                  type="button"
-                  onClick={onNavigateToRoadmap}
-                  className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 cursor-pointer"
-                >
-                  Xem toàn bộ 30 ngày →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Role-Based Suggestions to Add to Learning Path */}
-          <div className="lg:col-span-7 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 md:p-8 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                   Gợi ý cá nhân hóa cho phòng ban {profile.role}
@@ -1152,8 +1439,13 @@ export const UserProfileLearningPathView: React.FC<
                     className="cursor-pointer rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 flex items-center justify-between gap-3 hover:border-emerald-500 transition-colors"
                   >
                     <div className="min-w-0">
-                      <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                        Prompt gợi ý · {p.role} · {p.level}
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                        <span>Prompt gợi ý · {p.role} · {p.level}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="inline-flex items-center gap-0.5 font-normal text-slate-600 dark:text-slate-400">
+                          <Eye className="w-3 h-3 text-slate-400" />
+                          {(p.viewCount || 0).toLocaleString('vi-VN')} xem
+                        </span>
                       </div>
                       <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                         {p.title}
@@ -1177,8 +1469,13 @@ export const UserProfileLearningPathView: React.FC<
                     className="cursor-pointer rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3.5 flex items-center justify-between gap-3 hover:border-emerald-500 transition-colors"
                   >
                     <div className="min-w-0">
-                      <div className="text-[11px] font-semibold text-blue-700 dark:text-blue-400">
-                        Tình huống mẫu · {a.role} · {a.readTimeMinutes} phút đọc
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-700 dark:text-blue-400">
+                        <span>Tình huống mẫu · {a.role} · {a.readTimeMinutes} phút đọc</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="inline-flex items-center gap-0.5 font-normal text-slate-600 dark:text-slate-400">
+                          <Eye className="w-3 h-3 text-slate-400" />
+                          {(a.viewCount || 0).toLocaleString('vi-VN')} xem
+                        </span>
                       </div>
                       <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                         {a.title}

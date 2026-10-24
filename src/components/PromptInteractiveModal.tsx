@@ -16,6 +16,7 @@ import {
   StickyNote,
   ArrowRight,
   Layers,
+  Eye,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -244,6 +245,11 @@ export const PromptInteractiveModal: React.FC<PromptInteractiveModalProps> = ({
               <span>{prompt.pillar}</span>
               <span aria-hidden="true">·</span>
               <span>Trình độ: {prompt.level}</span>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                <Eye className="w-3.5 h-3.5 text-slate-400" />
+                {(prompt.viewCount || 0).toLocaleString('vi-VN')} lượt xem
+              </span>
               <span aria-hidden="true">·</span>
               <span>Cập nhật {prompt.updatedAt}</span>
             </div>

@@ -71,6 +71,7 @@ import {
   Command,
   CornerDownLeft,
   Menu,
+  Eye,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -336,6 +337,7 @@ export default function App() {
             ...p,
             updatedAt: p.updatedAt === '10/2026' ? ref.updatedAt : p.updatedAt,
             agentType: p.agentType || ref.agentType,
+            viewCount: p.viewCount !== undefined ? p.viewCount : (ref.viewCount || 0),
           };
         }
         return p;
@@ -351,7 +353,22 @@ export default function App() {
   const [articles, setArticles] = useState<ArticleItem[]>(() => {
     try {
       const saved = localStorage.getItem('aicongso_articles');
-      return saved ? JSON.parse(saved) : INITIAL_ARTICLES;
+      if (!saved) return INITIAL_ARTICLES;
+      const parsed: ArticleItem[] = JSON.parse(saved);
+      const initialMap = new Map(INITIAL_ARTICLES.map((item) => [item.id, item]));
+      const merged = parsed.map((a) => {
+        const ref = initialMap.get(a.id);
+        if (ref) {
+          return {
+            ...a,
+            viewCount: a.viewCount !== undefined ? a.viewCount : (ref.viewCount || 0),
+          };
+        }
+        return a;
+      });
+      const existingIds = new Set(merged.map((a) => a.id));
+      const newDefaults = INITIAL_ARTICLES.filter((a) => !existingIds.has(a.id));
+      return [...newDefaults, ...merged];
     } catch {
       return INITIAL_ARTICLES;
     }
@@ -952,6 +969,26 @@ export default function App() {
     );
   };
 
+  const handleRecordPromptView = (promptId: string) => {
+    setPrompts((prev) =>
+      prev.map((item) =>
+        item.id === promptId
+          ? { ...item, viewCount: (item.viewCount || 0) + 1 }
+          : item
+      )
+    );
+  };
+
+  const handleRecordArticleView = (articleId: string) => {
+    setArticles((prev) =>
+      prev.map((item) =>
+        item.id === articleId
+          ? { ...item, viewCount: (item.viewCount || 0) + 1 }
+          : item
+      )
+    );
+  };
+
   const handleLeadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1547,7 +1584,10 @@ export default function App() {
                           }
                         }}
                         onKeyDown={(e) => handlePromptCardKeyDown(e, p)}
-                        onClick={() => setActivePromptModal(p)}
+                        onClick={() => {
+                          handleRecordPromptView(p.id);
+                          setActivePromptModal(p);
+                        }}
                         className={`group cursor-pointer flex flex-col justify-between overflow-hidden rounded-2xl border bg-slate-50/50 dark:bg-slate-800/30 p-3.5 hover:border-emerald-500 hover:bg-white dark:hover:bg-slate-900 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
                           isCompared
                             ? 'border-emerald-500 ring-2 ring-emerald-500/20'
@@ -1599,6 +1639,11 @@ export default function App() {
                               </span>
                               <span aria-hidden="true">·</span>
                               <span>{p.level}</span>
+                              <span aria-hidden="true">·</span>
+                              <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                                <Eye className="w-3.5 h-3.5 text-slate-400" />
+                                {(p.viewCount || 0).toLocaleString('vi-VN')} xem
+                              </span>
                               <span aria-hidden="true">·</span>
                               <span className="font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
                                 {p.copyCount.toLocaleString('vi-VN')} copy
@@ -1987,7 +2032,10 @@ export default function App() {
                       {linkedArticle && (
                         <button
                           type="button"
-                          onClick={() => setActiveArticleModal(linkedArticle)}
+                          onClick={() => {
+                            handleRecordArticleView(linkedArticle.id);
+                            setActiveArticleModal(linkedArticle);
+                          }}
                           className="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
                         >
                           Xem minh họa tình huống →
@@ -1996,7 +2044,10 @@ export default function App() {
                       {linkedPrompt && (
                         <button
                           type="button"
-                          onClick={() => setActivePromptModal(linkedPrompt)}
+                          onClick={() => {
+                            handleRecordPromptView(linkedPrompt.id);
+                            setActivePromptModal(linkedPrompt);
+                          }}
                           className="text-xs font-bold text-slate-700 dark:text-slate-300 hover:underline cursor-pointer"
                         >
                           Mở mẫu Prompt thực hành →
@@ -2074,7 +2125,10 @@ export default function App() {
                 return (
                   <article
                     key={art.id}
-                    onClick={() => setActiveArticleModal(art)}
+                    onClick={() => {
+                      handleRecordArticleView(art.id);
+                      setActiveArticleModal(art);
+                    }}
                     className="group cursor-pointer flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all"
                   >
                     <div>
@@ -2094,14 +2148,19 @@ export default function App() {
                       </div>
 
                       <div className="p-3 pt-4">
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                           <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                             {art.role}
                           </span>
                           <span aria-hidden="true">·</span>
                           <span>{art.level}</span>
                           <span aria-hidden="true">·</span>
-                          <span>{art.readTimeMinutes} phút xem</span>
+                          <span>{art.readTimeMinutes} phút đọc</span>
+                          <span aria-hidden="true">·</span>
+                          <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                            <Eye className="w-3.5 h-3.5 text-slate-400" />
+                            {(art.viewCount || 0).toLocaleString('vi-VN')} lượt xem
+                          </span>
                         </div>
 
                         <h2 className="mt-2 text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-2">
@@ -2441,6 +2500,7 @@ export default function App() {
                       }}
                       onKeyDown={(e) => handlePromptCardKeyDown(e, p)}
                       onClick={() => {
+                        handleRecordPromptView(p.id);
                         setActivePromptModalTab('builder');
                         setActivePromptModal(p);
                       }}
@@ -2527,8 +2587,13 @@ export default function App() {
                             <span aria-hidden="true">·</span>
                             <span>{p.level}</span>
                             <span aria-hidden="true">·</span>
+                            <span className="inline-flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                              <Eye className="w-3.5 h-3.5 text-slate-400" />
+                              {(p.viewCount || 0).toLocaleString('vi-VN')} xem
+                            </span>
+                            <span aria-hidden="true">·</span>
                             <span className="font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
-                              {p.copyCount.toLocaleString('vi-VN')} lượt copy
+                              {p.copyCount.toLocaleString('vi-VN')} copy
                             </span>
                           </div>
 
@@ -2867,8 +2932,14 @@ export default function App() {
             onChangePromptNote={handleUpdatePromptNote}
             onToggleFavoritePrompt={toggleFavoritePrompt}
             onToggleFavoriteArticle={toggleFavoriteArticle}
-            onOpenPromptModal={setActivePromptModal}
-            onOpenArticleModal={setActiveArticleModal}
+            onOpenPromptModal={(p) => {
+              handleRecordPromptView(p.id);
+              setActivePromptModal(p);
+            }}
+            onOpenArticleModal={(art) => {
+              handleRecordArticleView(art.id);
+              setActiveArticleModal(art);
+            }}
             onQuickCopyPrompt={handleQuickCopyPrompt}
             quickCopiedId={quickCopiedId}
             comparePromptIds={comparePromptIds}

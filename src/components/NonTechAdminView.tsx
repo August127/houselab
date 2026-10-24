@@ -10,7 +10,7 @@ import {
   TEN_VIDEO_SCRIPTS,
   WEEKLY_SOLO_WORKFLOW,
 } from '../data/siteData';
-import { Check, Copy, Download, Plus, Trash2, RotateCcw } from 'lucide-react';
+import { Check, Copy, Download, Plus, Trash2, RotateCcw, Eye } from 'lucide-react';
 
 interface SubscriberRecord {
   email: string;
@@ -124,6 +124,7 @@ export const NonTechAdminView: React.FC<NonTechAdminViewProps> = ({
       securityTip: pSecurity.trim(),
       updatedAt: '10/2026',
       copyCount: 1,
+      viewCount: 1,
     };
 
     onAddPrompt(newPrompt);
@@ -149,6 +150,7 @@ export const NonTechAdminView: React.FC<NonTechAdminViewProps> = ({
       tools: ['Claude', 'ChatGPT', 'Gemini'],
       updatedAt: 'Cập nhật 10/2026',
       readTimeMinutes: 5,
+      viewCount: 1,
       situationContext: aContext.trim() || 'Tình huống công việc thực tế tại văn phòng.',
       badPrompt: aBadPrompt.trim() || 'Câu lệnh ngắn thiếu bối cảnh công việc.',
       goodPrompt: aGoodPrompt.trim(),
@@ -635,8 +637,15 @@ export const NonTechAdminView: React.FC<NonTechAdminViewProps> = ({
                   className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4"
                 >
                   <div>
-                    <div className="text-xs text-slate-500">
-                      {p.pillar} · {p.role} · {p.level} · Cập nhật {p.updatedAt}
+                    <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                      <span>{p.pillar} · {p.role} · {p.level}</span>
+                      <span>•</span>
+                      <span className="inline-flex items-center gap-1 font-medium text-slate-600">
+                        <Eye className="h-3 w-3 text-slate-400" />
+                        {(p.viewCount || 0).toLocaleString('vi-VN')} xem
+                      </span>
+                      <span>•</span>
+                      <span>Cập nhật {p.updatedAt}</span>
                     </div>
                     <h3 className="mt-1 text-sm font-bold text-slate-900">{p.title}</h3>
                     <p className="mt-1 text-xs text-slate-600">{p.situation}</p>
@@ -791,8 +800,15 @@ export const NonTechAdminView: React.FC<NonTechAdminViewProps> = ({
                 className="flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4"
               >
                 <div>
-                  <div className="text-xs text-slate-500">
-                    {art.pillar} · {art.role} · {art.level} · {art.updatedAt}
+                  <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                    <span>{art.pillar} · {art.role} · {art.level}</span>
+                    <span>•</span>
+                    <span className="inline-flex items-center gap-1 font-medium text-slate-600">
+                      <Eye className="h-3 w-3 text-slate-400" />
+                      {(art.viewCount || 0).toLocaleString('vi-VN')} xem
+                    </span>
+                    <span>•</span>
+                    <span>{art.updatedAt}</span>
                   </div>
                   <h3 className="mt-1 text-sm font-bold text-slate-900">{art.title}</h3>
                   <p className="mt-1 text-xs text-slate-600">{art.subtitle}</p>

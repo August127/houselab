@@ -1,13 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import {
   ResponsiveContainer,
-  LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   Area,
   ComposedChart,
 } from 'recharts';
@@ -18,13 +16,16 @@ import {
   BookOpen,
   Award,
   Clock,
-  CheckCircle2,
   Filter,
   BarChart2,
   Flame,
+  ArrowRight,
+  Layers,
+  Target,
 } from 'lucide-react';
 
 export type ChartTimeframe = 'week' | 'month';
+export type ChartDisplayMode = 'cumulative' | 'delta';
 
 interface LearningProgressChartProps {
   completedPromptsCount: number;
@@ -32,6 +33,8 @@ interface LearningProgressChartProps {
   roadmapCompletedCount: number;
   className?: string;
   onLogPractice?: () => void;
+  onExploreArticles?: () => void;
+  onViewNextRoadmap?: () => void;
 }
 
 interface DataPoint {
@@ -39,7 +42,10 @@ interface DataPoint {
   fullDate: string;
   prompts: number;
   articles: number;
+  newPrompts: number;
+  newArticles: number;
   cumulativeTotal: number;
+  periodTotal: number;
   savedHours: number;
   milestone?: string;
 }
@@ -50,8 +56,11 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
   roadmapCompletedCount,
   className = '',
   onLogPractice,
+  onExploreArticles,
+  onViewNextRoadmap,
 }) => {
   const [timeframe, setTimeframe] = useState<ChartTimeframe>('week');
+  const [displayMode, setDisplayMode] = useState<ChartDisplayMode>('cumulative');
   const [showPromptsLine, setShowPromptsLine] = useState(true);
   const [showArticlesLine, setShowArticlesLine] = useState(true);
   const [showCumulativeArea, setShowCumulativeArea] = useState(true);
@@ -60,17 +69,18 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
   const chartData: DataPoint[] = useMemo(() => {
     if (timeframe === 'week') {
       // 6-week progressive trend leading up to current week (Tuần 41 - Tuần 46 năm 2026)
-      const basePrompts = Math.max(1, completedPromptsCount);
-      const baseArticles = Math.max(1, completedArticlesCount);
+      const basePrompts = Math.max(0, completedPromptsCount);
+      const baseArticles = Math.max(0, completedArticlesCount);
 
-      const pW1 = Math.max(1, Math.round(basePrompts * 0.15));
+      // Cumulative points progression
+      const pW1 = Math.round(basePrompts * 0.15);
       const pW2 = Math.max(pW1, Math.round(basePrompts * 0.3));
       const pW3 = Math.max(pW2, Math.round(basePrompts * 0.45));
       const pW4 = Math.max(pW3, Math.round(basePrompts * 0.65));
       const pW5 = Math.max(pW4, Math.round(basePrompts * 0.85));
       const pW6 = basePrompts;
 
-      const aW1 = Math.max(0, Math.round(baseArticles * 0.2));
+      const aW1 = Math.round(baseArticles * 0.2);
       const aW2 = Math.max(aW1, Math.round(baseArticles * 0.35));
       const aW3 = Math.max(aW2, Math.round(baseArticles * 0.5));
       const aW4 = Math.max(aW3, Math.round(baseArticles * 0.7));
@@ -83,16 +93,22 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
           fullDate: '15/09 – 21/09/2026',
           prompts: pW1,
           articles: aW1,
+          newPrompts: pW1,
+          newArticles: aW1,
           cumulativeTotal: pW1 + aW1,
+          periodTotal: pW1 + aW1,
           savedHours: Math.round((pW1 * 0.75 + aW1 * 0.5) * 10) / 10,
-          milestone: 'Làm quen AI cơ bản',
+          milestone: 'Khởi đầu lộ trình AI',
         },
         {
           timeLabel: 'Tuần 2',
           fullDate: '22/09 – 28/09/2026',
           prompts: pW2,
           articles: aW2,
+          newPrompts: Math.max(0, pW2 - pW1),
+          newArticles: Math.max(0, aW2 - aW1),
           cumulativeTotal: pW2 + aW2,
+          periodTotal: Math.max(0, pW2 - pW1) + Math.max(0, aW2 - aW1),
           savedHours: Math.round((pW2 * 0.75 + aW2 * 0.5) * 10) / 10,
         },
         {
@@ -100,16 +116,22 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
           fullDate: '29/09 – 05/10/2026',
           prompts: pW3,
           articles: aW3,
+          newPrompts: Math.max(0, pW3 - pW2),
+          newArticles: Math.max(0, aW3 - aW2),
           cumulativeTotal: pW3 + aW3,
+          periodTotal: Math.max(0, pW3 - pW2) + Math.max(0, aW3 - aW2),
           savedHours: Math.round((pW3 * 0.75 + aW3 * 0.5) * 10) / 10,
-          milestone: 'Nắm vững cấu trúc 4 bước',
+          milestone: 'Chuẩn hóa công thức 4 bước',
         },
         {
           timeLabel: 'Tuần 4',
           fullDate: '06/10 – 12/10/2026',
           prompts: pW4,
           articles: aW4,
+          newPrompts: Math.max(0, pW4 - pW3),
+          newArticles: Math.max(0, aW4 - aW3),
           cumulativeTotal: pW4 + aW4,
+          periodTotal: Math.max(0, pW4 - pW3) + Math.max(0, aW4 - aW3),
           savedHours: Math.round((pW4 * 0.75 + aW4 * 0.5) * 10) / 10,
         },
         {
@@ -117,16 +139,22 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
           fullDate: '13/10 – 19/10/2026',
           prompts: pW5,
           articles: aW5,
+          newPrompts: Math.max(0, pW5 - pW4),
+          newArticles: Math.max(0, aW5 - aW4),
           cumulativeTotal: pW5 + aW5,
+          periodTotal: Math.max(0, pW5 - pW4) + Math.max(0, aW5 - aW4),
           savedHours: Math.round((pW5 * 0.75 + aW5 * 0.5) * 10) / 10,
-          milestone: 'Bảo mật dữ liệu nhạy cảm',
+          milestone: 'Bảo mật & Ẩn danh dữ liệu',
         },
         {
           timeLabel: 'Tuần này',
           fullDate: '20/10 – 26/10/2026',
           prompts: pW6,
           articles: aW6,
+          newPrompts: Math.max(0, pW6 - pW5),
+          newArticles: Math.max(0, aW6 - aW5),
           cumulativeTotal: pW6 + aW6,
+          periodTotal: Math.max(0, pW6 - pW5) + Math.max(0, aW6 - aW5),
           savedHours: Math.round((pW6 * 0.75 + aW6 * 0.5) * 10) / 10,
           milestone: 'Hiện tại',
         },
@@ -134,17 +162,17 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
       return raw;
     } else {
       // 6-month progressive trend (Tháng 5 -> Tháng 10/2026)
-      const basePrompts = Math.max(1, completedPromptsCount);
-      const baseArticles = Math.max(1, completedArticlesCount);
+      const basePrompts = Math.max(0, completedPromptsCount);
+      const baseArticles = Math.max(0, completedArticlesCount);
 
-      const pM1 = Math.max(1, Math.round(basePrompts * 0.1));
+      const pM1 = Math.round(basePrompts * 0.1);
       const pM2 = Math.max(pM1, Math.round(basePrompts * 0.25));
       const pM3 = Math.max(pM2, Math.round(basePrompts * 0.4));
       const pM4 = Math.max(pM3, Math.round(basePrompts * 0.6));
       const pM5 = Math.max(pM4, Math.round(basePrompts * 0.8));
       const pM6 = basePrompts;
 
-      const aM1 = Math.max(0, Math.round(baseArticles * 0.15));
+      const aM1 = Math.round(baseArticles * 0.15);
       const aM2 = Math.max(aM1, Math.round(baseArticles * 0.3));
       const aM3 = Math.max(aM2, Math.round(baseArticles * 0.45));
       const aM4 = Math.max(aM3, Math.round(baseArticles * 0.65));
@@ -157,16 +185,22 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
           fullDate: 'Tháng 05/2026',
           prompts: pM1,
           articles: aM1,
+          newPrompts: pM1,
+          newArticles: aM1,
           cumulativeTotal: pM1 + aM1,
+          periodTotal: pM1 + aM1,
           savedHours: Math.round((pM1 * 1.5 + aM1 * 1.0) * 10) / 10,
-          milestone: 'Khởi đầu lộ trình',
+          milestone: 'Giai đoạn Nhập môn',
         },
         {
           timeLabel: 'Tháng 6/26',
           fullDate: 'Tháng 06/2026',
           prompts: pM2,
           articles: aM2,
+          newPrompts: Math.max(0, pM2 - pM1),
+          newArticles: Math.max(0, aM2 - aM1),
           cumulativeTotal: pM2 + aM2,
+          periodTotal: Math.max(0, pM2 - pM1) + Math.max(0, aM2 - aM1),
           savedHours: Math.round((pM2 * 1.5 + aM2 * 1.0) * 10) / 10,
         },
         {
@@ -174,7 +208,10 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
           fullDate: 'Tháng 07/2026',
           prompts: pM3,
           articles: aM3,
+          newPrompts: Math.max(0, pM3 - pM2),
+          newArticles: Math.max(0, aM3 - aM2),
           cumulativeTotal: pM3 + aM3,
+          periodTotal: Math.max(0, pM3 - pM2) + Math.max(0, aM3 - aM2),
           savedHours: Math.round((pM3 * 1.5 + aM3 * 1.0) * 10) / 10,
           milestone: 'Ứng dụng Excel & Email',
         },
@@ -183,7 +220,10 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
           fullDate: 'Tháng 08/2026',
           prompts: pM4,
           articles: aM4,
+          newPrompts: Math.max(0, pM4 - pM3),
+          newArticles: Math.max(0, aM4 - aM3),
           cumulativeTotal: pM4 + aM4,
+          periodTotal: Math.max(0, pM4 - pM3) + Math.max(0, aM4 - aM3),
           savedHours: Math.round((pM4 * 1.5 + aM4 * 1.0) * 10) / 10,
         },
         {
@@ -191,18 +231,24 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
           fullDate: 'Tháng 09/2026',
           prompts: pM5,
           articles: aM5,
+          newPrompts: Math.max(0, pM5 - pM4),
+          newArticles: Math.max(0, aM5 - aM4),
           cumulativeTotal: pM5 + aM5,
+          periodTotal: Math.max(0, pM5 - pM4) + Math.max(0, aM5 - aM4),
           savedHours: Math.round((pM5 * 1.5 + aM5 * 1.0) * 10) / 10,
-          milestone: 'So sánh đa mô hình AI',
+          milestone: 'So sánh đa mô hình Claude/GPT',
         },
         {
           timeLabel: 'Tháng 10/26',
           fullDate: 'Tháng 10/2026 (Hiện tại)',
           prompts: pM6,
           articles: aM6,
+          newPrompts: Math.max(0, pM6 - pM5),
+          newArticles: Math.max(0, aM6 - aM5),
           cumulativeTotal: pM6 + aM6,
+          periodTotal: Math.max(0, pM6 - pM5) + Math.max(0, aM6 - aM5),
           savedHours: Math.round((pM6 * 1.5 + aM6 * 1.0) * 10) / 10,
-          milestone: 'Đạt cấp độ Thực chiến',
+          milestone: 'Thực chiến & Tự động hóa',
         },
       ];
       return raw;
@@ -211,15 +257,21 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
 
   // Overall metric totals
   const totalCompleted = completedPromptsCount + completedArticlesCount;
-  const totalHoursSaved = Math.round((completedPromptsCount * 0.75 + completedArticlesCount * 0.5) * 10) / 10;
-  const growthRate = '+28.4%';
+  const totalHoursSaved =
+    Math.round((completedPromptsCount * 0.75 + completedArticlesCount * 0.5) * 10) / 10;
+  const growthRate = totalCompleted > 0 ? '+28.4%' : '0%';
+
+  // Determine active data keys based on displayMode
+  const promptDataKey = displayMode === 'cumulative' ? 'prompts' : 'newPrompts';
+  const articleDataKey = displayMode === 'cumulative' ? 'articles' : 'newArticles';
+  const areaDataKey = displayMode === 'cumulative' ? 'cumulativeTotal' : 'periodTotal';
 
   return (
     <div
       className={`rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-7 shadow-xs space-y-6 ${className}`}
     >
-      {/* Top Header & Timeframe Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+      {/* Top Header & Switchers */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
             <TrendingUp className="w-3.5 h-3.5" />
@@ -228,17 +280,47 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
           <h3 className="mt-1 font-display text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             <span>Tiến trình hoàn thành Prompt &amp; Bài viết</span>
             <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
-              {totalCompleted} mục đã xong
+              {totalCompleted} mục đã hoàn thành
             </span>
           </h3>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            Theo dõi đường tăng trưởng kỹ năng thực chiến và thời gian làm việc đã tiết kiệm được.
+            Trực quan hóa đường cong làm chủ AI văn phòng và số giờ làm việc tiết kiệm được qua từng tuần/tháng.
           </p>
         </div>
 
-        {/* Controls: Timeframe & Metric Filters */}
+        {/* Controls: Timeframe (Tuần / Tháng) & Mode (Lũy kế / Từng kỳ) */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Week / Month Toggle */}
+          {/* Display Mode Switcher (Lũy kế vs Từng kỳ) */}
+          <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200/80 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => setDisplayMode('cumulative')}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                displayMode === 'cumulative'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Xem tổng số lượng tích lũy tăng dần qua thời gian"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Đường lũy kế</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDisplayMode('delta')}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                displayMode === 'delta'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Xem số lượng hoàn thành mới trong từng tuần hoặc từng tháng"
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span>Số lượng từng kỳ</span>
+            </button>
+          </div>
+
+          {/* Timeframe Toggle (Theo tuần vs Theo tháng) */}
           <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200/80 dark:border-slate-700">
             <button
               type="button"
@@ -292,7 +374,7 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             {completedArticlesCount}
           </div>
           <div className="text-[11px] text-blue-700 dark:text-blue-400 font-medium">
-            Quy trình &amp; bàn cân 3 AI đã đọc
+            Tình huống &amp; so sánh 3 AI đã đọc
           </div>
         </div>
 
@@ -318,7 +400,7 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             {growthRate}
           </div>
           <div className="text-[11px] text-purple-700 dark:text-purple-300 font-medium">
-            So với chu kỳ trước
+            Đã xong {roadmapCompletedCount}/30 ngày
           </div>
         </div>
       </div>
@@ -341,7 +423,7 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Prompt hoàn thành</span>
+            <span>Prompt hoàn thành ({completedPromptsCount})</span>
           </button>
 
           <button
@@ -354,7 +436,7 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-blue-500" />
-            <span>Bài viết đã đọc</span>
+            <span>Bài viết hoàn thành ({completedArticlesCount})</span>
           </button>
 
           <button
@@ -367,12 +449,12 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-teal-400" />
-            <span>Vùng tích luỹ tổng</span>
+            <span>{displayMode === 'cumulative' ? 'Vùng tích luỹ tổng' : 'Vùng tổng từng kỳ'}</span>
           </button>
         </div>
 
         <span className="text-[11px] text-slate-400 dark:text-slate-500 italic">
-          *Dữ liệu tự động cập nhật khi bạn đánh dấu thành thạo Prompt hoặc hoàn tất Lộ trình
+          *Dữ liệu tự động cập nhật khi bạn bấm &apos;Thành thạo&apos; hoặc &apos;Đã đọc &amp; áp dụng&apos;
         </span>
       </div>
 
@@ -444,29 +526,33 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
                         <div className="flex items-center justify-between gap-4">
                           <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            Prompt hoàn thành:
+                            {displayMode === 'cumulative'
+                              ? 'Prompt hoàn thành:'
+                              : 'Prompt mới kỳ này:'}
                           </span>
                           <strong className="text-emerald-600 dark:text-emerald-400 tabular-nums">
-                            {item.prompts} mục
+                            {displayMode === 'cumulative' ? item.prompts : item.newPrompts} mục
                           </strong>
                         </div>
 
                         <div className="flex items-center justify-between gap-4">
                           <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                             <span className="h-2 w-2 rounded-full bg-blue-500" />
-                            Bài viết đã đọc:
+                            {displayMode === 'cumulative'
+                              ? 'Bài viết hoàn thành:'
+                              : 'Bài viết mới kỳ này:'}
                           </span>
                           <strong className="text-blue-600 dark:text-blue-400 tabular-nums">
-                            {item.articles} bài
+                            {displayMode === 'cumulative' ? item.articles : item.newArticles} bài
                           </strong>
                         </div>
 
                         <div className="flex items-center justify-between gap-4 pt-1 border-t border-slate-100 dark:border-slate-800/80">
                           <span className="font-semibold text-slate-700 dark:text-slate-200">
-                            Tổng tích lũy:
+                            {displayMode === 'cumulative' ? 'Tổng tích luỹ:' : 'Tổng hoàn thành kỳ này:'}
                           </span>
                           <strong className="text-slate-900 dark:text-white tabular-nums font-black">
-                            {item.cumulativeTotal} mục
+                            {displayMode === 'cumulative' ? item.cumulativeTotal : item.periodTotal} mục
                           </strong>
                         </div>
 
@@ -491,8 +577,8 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             {showCumulativeArea && (
               <Area
                 type="monotone"
-                dataKey="cumulativeTotal"
-                name="Tổng tích luỹ"
+                dataKey={areaDataKey}
+                name={displayMode === 'cumulative' ? 'Tổng tích luỹ' : 'Tổng từng kỳ'}
                 fill="url(#colorCumulative)"
                 stroke="#10B981"
                 strokeWidth={1}
@@ -505,8 +591,8 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             {showPromptsLine && (
               <Line
                 type="monotone"
-                dataKey="prompts"
-                name="Prompt hoàn thành"
+                dataKey={promptDataKey}
+                name={displayMode === 'cumulative' ? 'Prompt hoàn thành' : 'Prompt mới'}
                 stroke="url(#linePromptsGrad)"
                 strokeWidth={3}
                 dot={{
@@ -528,8 +614,8 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             {showArticlesLine && (
               <Line
                 type="monotone"
-                dataKey="articles"
-                name="Bài viết đã đọc"
+                dataKey={articleDataKey}
+                name={displayMode === 'cumulative' ? 'Bài viết hoàn thành' : 'Bài viết mới'}
                 stroke="url(#lineArticlesGrad)"
                 strokeWidth={3}
                 dot={{
@@ -557,20 +643,48 @@ export const LearningProgressChart: React.FC<LearningProgressChartProps> = ({
             ✓
           </span>
           <span>
-            <strong>Nhận xét tiến độ:</strong> Bạn đang duy trì phong độ rất tốt! Mỗi tuần hoàn thành trung bình 2–3 prompt giúp giảm 70% lỗi định dạng văn bản và bảng tính.
+            <strong>Nhận xét tiến độ:</strong>{' '}
+            {totalCompleted > 0
+              ? `Bạn đã hoàn thành ${totalCompleted} mục (${completedPromptsCount} prompt & ${completedArticlesCount} bài viết). Duy trì thói quen 1–2 prompt mỗi tuần giúp tiết kiệm 70% thời gian xử lý thủ công.`
+              : 'Hãy bắt đầu đánh dấu thành thạo Prompt hoặc hoàn thành Bài viết để xem đường tiến độ thực tế!'}
           </span>
         </div>
 
-        {onLogPractice && (
-          <button
-            type="button"
-            onClick={onLogPractice}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors cursor-pointer shrink-0"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Thực hành thêm hôm nay</span>
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {onViewNextRoadmap && (
+            <button
+              type="button"
+              onClick={onViewNextRoadmap}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/40 px-3 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer"
+            >
+              <Target className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Gợi ý chặng tiếp theo</span>
+            </button>
+          )}
+
+          {onExploreArticles && (
+            <button
+              type="button"
+              onClick={onExploreArticles}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-50/60 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Đọc tình huống mẫu</span>
+            </button>
+          )}
+
+          {onLogPractice && (
+            <button
+              type="button"
+              onClick={onLogPractice}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Thực hành Prompt</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

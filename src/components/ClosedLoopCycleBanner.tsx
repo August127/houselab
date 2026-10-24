@@ -1,5 +1,11 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { CLOSED_LOOP_STAGES } from '../data/aiNewsData';
+import {
+  PromptItem,
+  RoadmapDay,
+  OfficeRole,
+  INITIAL_ROADMAP,
+} from '../data/siteData';
 import {
   Newspaper,
   BookOpen,
@@ -7,6 +13,11 @@ import {
   UserCheck,
   ArrowRight,
   CheckCircle2,
+  Copy,
+  Check,
+  Target,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 export type ClosedLoopActivePage =
@@ -30,6 +41,13 @@ interface ClosedLoopCycleBannerProps {
   savedCount: number;
   roadmapProgressPct: number;
   variant?: 'compact-strip' | 'home-hub';
+  prompts?: PromptItem[];
+  roadmap?: RoadmapDay[];
+  completedRoadmapDays?: Record<string, boolean>;
+  selectedRole?: OfficeRole | 'Tất cả';
+  onOpenPromptModal?: (prompt: PromptItem) => void;
+  onQuickCopyPrompt?: (prompt: PromptItem) => void;
+  quickCopiedId?: string | null;
 }
 
 export const ClosedLoopCycleBanner: React.FC<ClosedLoopCycleBannerProps> = ({
@@ -41,7 +59,16 @@ export const ClosedLoopCycleBanner: React.FC<ClosedLoopCycleBannerProps> = ({
   savedCount,
   roadmapProgressPct,
   variant = 'home-hub',
+  prompts = [],
+  roadmap = INITIAL_ROADMAP,
+  completedRoadmapDays = {},
+  selectedRole,
+  onOpenPromptModal,
+  onQuickCopyPrompt,
+  quickCopiedId,
 }) => {
+  const [showPromptDetail, setShowPromptDetail] = useState(false);
+
   const getActiveStepIndex = (): number => {
     if (activePage === 'news') return 0;
     if (activePage === 'articles' || activePage === 'roadmap') return 1;
@@ -51,6 +78,46 @@ export const ClosedLoopCycleBanner: React.FC<ClosedLoopCycleBannerProps> = ({
   };
 
   const activeIdx = getActiveStepIndex();
+
+  // Determine current active milestone in the 30-day roadmap
+  const currentRoadmapStep = useMemo((): RoadmapDay => {
+    const steps = roadmap && roadmap.length > 0 ? roadmap : INITIAL_ROADMAP;
+    const firstUnfinished = steps.find((step) => !completedRoadmapDays[step.dayRange]);
+    return firstUnfinished || steps[steps.length - 1];
+  }, [roadmap, completedRoadmapDays]);
+
+  // Determine 1 matching prompt tailored to current roadmap milestone
+  const suggestedPromptToday = useMemo((): PromptItem | null => {
+    if (!prompts || prompts.length === 0) return null;
+
+    // 1. Direct linked prompt from roadmap step
+    if (currentRoadmapStep?.linkedPromptId) {
+      const linked = prompts.find((p) => p.id === currentRoadmapStep.linkedPromptId);
+      if (linked) return linked;
+    }
+
+    // 2. Match current roadmap skill level and user's selected role
+    if (currentRoadmapStep?.level) {
+      if (selectedRole && selectedRole !== 'Tất cả') {
+        const roleLevelMatch = prompts.find(
+          (p) => p.role === selectedRole && p.level === currentRoadmapStep.level
+        );
+        if (roleLevelMatch) return roleLevelMatch;
+      }
+
+      const levelMatch = prompts.find((p) => p.level === currentRoadmapStep.level);
+      if (levelMatch) return levelMatch;
+    }
+
+    // 3. Match role alone
+    if (selectedRole && selectedRole !== 'Tất cả') {
+      const roleMatch = prompts.find((p) => p.role === selectedRole);
+      if (roleMatch) return roleMatch;
+    }
+
+    // 4. Default fallback
+    return prompts[0] || null;
+  }, [prompts, currentRoadmapStep, selectedRole]);
 
   const getStepMetric = (id: 'news' | 'articles' | 'prompts' | 'profile') => {
     switch (id) {
@@ -122,8 +189,111 @@ export const ClosedLoopCycleBanner: React.FC<ClosedLoopCycleBannerProps> = ({
                 </React.Fragment>
               );
             })}
+
+            {/* NÚT GỢI Ý PROMPT HÔM NAY (ĐẶC BIỆT KHI Ở TRANG CÁ NHÂN HOẶC KHI CÓ PROMPT GỢI Ý) */}
+            {activePage === 'profile' && suggestedPromptToday && (
+              <>
+                <span className="hidden md:inline-block h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5" />
+                <div className="relative inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onOpenPromptModal) {
+                        onOpenPromptModal(suggestedPromptToday);
+                      } else {
+                        setShowPromptDetail((prev) => !prev);
+                      }
+                    }}
+                    className="group inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-1.5 text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                    title={`Gợi ý hôm nay theo tiến độ ${currentRoadmapStep?.dayRange}: ${suggestedPromptToday.title}`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
+                    <span>Gợi ý Prompt hôm nay</span>
+                    <span className="rounded-md bg-white/20 px-1.5 py-0.2 text-[10px] font-mono font-medium">
+                      {currentRoadmapStep?.dayRange}
+                    </span>
+                  </button>
+
+                  {/* Toggle small accordion preview on demand */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPromptDetail((prev) => !prev)}
+                    className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                    title={showPromptDetail ? 'Thu gọn chi tiết' : 'Xem nhanh lý do gợi ý'}
+                    aria-label="Xem chi tiết gợi ý hôm nay"
+                  >
+                    {showPromptDetail ? (
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
+
+        {/* EXPANDABLE CONTEXTUAL PREVIEW FOR TODAY'S SUGGESTION IN PROFILE BANNER */}
+        {activePage === 'profile' && showPromptDetail && suggestedPromptToday && (
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="space-y-1 min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400">
+                  <Target className="w-3.5 h-3.5" />
+                  Tiến độ hiện tại: {currentRoadmapStep.dayRange}
+                </span>
+                <span>·</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {currentRoadmapStep.title}
+                </span>
+                <span>·</span>
+                <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                  Cấp độ {currentRoadmapStep.level}
+                </span>
+              </div>
+              <p className="font-bold text-slate-900 dark:text-white truncate">
+                {suggestedPromptToday.title}
+                <span className="ml-2 font-normal text-slate-500 dark:text-slate-400">
+                  — {suggestedPromptToday.situation}
+                </span>
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {onQuickCopyPrompt && (
+                <button
+                  type="button"
+                  onClick={() => onQuickCopyPrompt(suggestedPromptToday)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-emerald-500 transition-colors cursor-pointer"
+                >
+                  {quickCopiedId === suggestedPromptToday.id ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span>Đã copy</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-slate-400" />
+                      <span>Sao chép</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {onOpenPromptModal && (
+                <button
+                  type="button"
+                  onClick={() => onOpenPromptModal(suggestedPromptToday)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <span>Mở điền biến &amp; Chạy thử</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -137,7 +307,7 @@ export const ClosedLoopCycleBanner: React.FC<ClosedLoopCycleBannerProps> = ({
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Kiến trúc Học tập & Ứng dụng Khép kín (Closed-Loop Learning)
+            Kiến trúc Học tập &amp; Ứng dụng Khép kín (Closed-Loop Learning)
           </div>
           <h2 className="mt-1 text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
             4 Bước biến kiến thức AI mới nhất thành quy trình làm việc mỗi sáng

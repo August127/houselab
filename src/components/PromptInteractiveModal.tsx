@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Layers,
   Eye,
+  Share2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -33,6 +34,7 @@ interface PromptInteractiveModalProps {
   onRecordCopy: (promptId: string) => void;
   isFavorite?: boolean;
   onToggleFavorite?: (promptId: string) => void;
+  onSharePrompt?: (prompt: PromptItem) => void;
   personalNote?: string;
   onChangePersonalNote?: (promptId: string, note: string) => void;
 }
@@ -137,6 +139,7 @@ export const PromptInteractiveModal: React.FC<PromptInteractiveModalProps> = ({
   onRecordCopy,
   isFavorite = false,
   onToggleFavorite,
+  onSharePrompt,
   personalNote = '',
   onChangePersonalNote,
 }) => {
@@ -256,6 +259,17 @@ export const PromptInteractiveModal: React.FC<PromptInteractiveModalProps> = ({
             <h2 className="mt-1.5 text-xl font-bold text-slate-900 dark:text-white">{prompt.title}</h2>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {onSharePrompt && (
+              <button
+                type="button"
+                onClick={() => onSharePrompt(prompt)}
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-emerald-500 hover:text-emerald-600 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                title="Chia sẻ Prompt: Tạo ảnh PNG đẹp mắt hoặc sao chép liên kết"
+              >
+                <Share2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Chia sẻ</span>
+              </button>
+            )}
             {onToggleFavorite && (
               <button
                 type="button"

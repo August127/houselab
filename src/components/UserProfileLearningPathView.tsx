@@ -41,6 +41,7 @@ import {
   Zap,
   TrendingUp,
   Calendar,
+  Flame,
 } from 'lucide-react';
 
 export interface UserProfileData {
@@ -1494,7 +1495,6 @@ export const UserProfileLearningPathView: React.FC<
               </div>
             )}
           </div>
-        </div>
       </section>
     </div>
   );

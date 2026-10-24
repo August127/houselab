@@ -38,6 +38,8 @@ import { AINewsView, HomeAINewsPreviewSection } from './components/AINewsView';
 import { ClosedLoopCycleBanner } from './components/ClosedLoopCycleBanner';
 import { AICongSoLogo } from './components/AICongSoLogo';
 import { HomeBentoGrid } from './components/HomeBentoGrid';
+import { PersonalizedHomeRecommendations } from './components/PersonalizedHomeRecommendations';
+import { PromptShareModal } from './components/PromptShareModal';
 import { AboutMeView } from './components/AboutMeView';
 import {
   RoleIsometricArtwork,
@@ -72,6 +74,7 @@ import {
   CornerDownLeft,
   Menu,
   Eye,
+  Share2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -418,6 +421,34 @@ export default function App() {
     }
   });
 
+  // Persistent User Interaction History for Personalized Recommendations
+  const [copiedPromptIds, setCopiedPromptIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('aicongso_copied_prompts');
+      return saved ? JSON.parse(saved) : ['prompt-01'];
+    } catch {
+      return ['prompt-01'];
+    }
+  });
+
+  const [viewedPromptIds, setViewedPromptIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('aicongso_viewed_prompts');
+      return saved ? JSON.parse(saved) : ['prompt-01', 'prompt-02'];
+    } catch {
+      return ['prompt-01', 'prompt-02'];
+    }
+  });
+
+  const [viewedArticleIds, setViewedArticleIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('aicongso_viewed_articles');
+      return saved ? JSON.parse(saved) : ['art-01'];
+    } catch {
+      return ['art-01'];
+    }
+  });
+
   // Persistent Personal Notes ('Ghi chú cá nhân') for each Prompt card in localStorage
   const [promptNotes, setPromptNotes] = useState<Record<string, string>>(() => {
     try {
@@ -471,6 +502,18 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('aicongso_fav_articles', JSON.stringify(favoriteArticleIds));
   }, [favoriteArticleIds]);
+
+  useEffect(() => {
+    localStorage.setItem('aicongso_copied_prompts', JSON.stringify(copiedPromptIds));
+  }, [copiedPromptIds]);
+
+  useEffect(() => {
+    localStorage.setItem('aicongso_viewed_prompts', JSON.stringify(viewedPromptIds));
+  }, [viewedPromptIds]);
+
+  useEffect(() => {
+    localStorage.setItem('aicongso_viewed_articles', JSON.stringify(viewedArticleIds));
+  }, [viewedArticleIds]);
 
   useEffect(() => {
     localStorage.setItem('aicongso_prompt_notes', JSON.stringify(promptNotes));
@@ -637,6 +680,7 @@ export default function App() {
   const [activePromptModal, setActivePromptModal] = useState<PromptItem | null>(null);
   const [activePromptModalTab, setActivePromptModalTab] = useState<'builder' | 'sample' | 'compare'>('builder');
   const [activeImprovePromptModal, setActiveImprovePromptModal] = useState<PromptItem | null>(null);
+  const [sharingPrompt, setSharingPrompt] = useState<PromptItem | null>(null);
   const [activeArticleModal, setActiveArticleModal] = useState<ArticleItem | null>(null);
   const [selectedStoreProduct, setSelectedStoreProduct] = useState<StoreProduct | null>(null);
   const [quickCopiedId, setQuickCopiedId] = useState<string | null>(null);
@@ -914,6 +958,7 @@ export default function App() {
         if (activePromptModal) setActivePromptModal(null);
         if (isCompareModalOpen) setIsCompareModalOpen(false);
         if (activeImprovePromptModal) setActiveImprovePromptModal(null);
+        if (sharingPrompt) setSharingPrompt(null);
         if (activeArticleModal) setActiveArticleModal(null);
         if (selectedStoreProduct) setSelectedStoreProduct(null);
         return;
@@ -957,11 +1002,15 @@ export default function App() {
     activePromptModal,
     isCompareModalOpen,
     activeImprovePromptModal,
+    sharingPrompt,
     activeArticleModal,
     selectedStoreProduct,
   ]);
 
   const handleRecordCopy = (promptId: string) => {
+    setCopiedPromptIds((prev) =>
+      prev.includes(promptId) ? prev : [promptId, ...prev]
+    );
     setPrompts((prev) =>
       prev.map((item) =>
         item.id === promptId ? { ...item, copyCount: item.copyCount + 1 } : item
@@ -970,6 +1019,9 @@ export default function App() {
   };
 
   const handleRecordPromptView = (promptId: string) => {
+    setViewedPromptIds((prev) =>
+      prev.includes(promptId) ? prev : [promptId, ...prev]
+    );
     setPrompts((prev) =>
       prev.map((item) =>
         item.id === promptId
@@ -980,6 +1032,9 @@ export default function App() {
   };
 
   const handleRecordArticleView = (articleId: string) => {
+    setViewedArticleIds((prev) =>
+      prev.includes(articleId) ? prev : [articleId, ...prev]
+    );
     setArticles((prev) =>
       prev.map((item) =>
         item.id === articleId
@@ -988,6 +1043,25 @@ export default function App() {
       )
     );
   };
+
+  // Handle direct shared prompt links (?prompt=prompt-01 or ?id=prompt-01)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const promptParam = searchParams.get('prompt') || searchParams.get('id');
+      if (promptParam) {
+        const found = prompts.find((p) => p.id === promptParam);
+        if (found) {
+          setActivePage('prompts');
+          handleRecordPromptView(found.id);
+          setActivePromptModal(found);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [prompts]);
 
   const handleLeadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1425,6 +1499,16 @@ export default function App() {
             savedCount={totalSavedCount}
             roadmapProgressPct={roadmapProgressPct}
             variant="compact-strip"
+            prompts={prompts}
+            roadmap={INITIAL_ROADMAP}
+            completedRoadmapDays={completedRoadmapDays}
+            selectedRole={selectedRole}
+            onOpenPromptModal={(p) => {
+              handleRecordPromptView(p.id);
+              setActivePromptModal(p);
+            }}
+            onQuickCopyPrompt={handleQuickCopyPrompt}
+            quickCopiedId={quickCopiedId}
           />
         )}
 
@@ -1443,6 +1527,27 @@ export default function App() {
               onCopyText={(text, title) => {
                 triggerCopyToast(title || 'Tóm tắt biên bản họp hành chính');
               }}
+            />
+
+            {/* GỢI Ý CHO BẠN: 3 PROMPT LIÊN QUAN NHẤT CHƯA TƯƠNG TÁC (TỪ LỊCH SỬ COPY & ĐỌC BÀI VIẾT) */}
+            <PersonalizedHomeRecommendations
+              prompts={prompts}
+              articles={articles}
+              copiedPromptIds={copiedPromptIds}
+              viewedArticleIds={viewedArticleIds}
+              viewedPromptIds={viewedPromptIds}
+              favoritePromptIds={favoritePromptIds}
+              onOpenPromptModal={(p) => {
+                handleRecordPromptView(p.id);
+                setActivePromptModal(p);
+              }}
+              onQuickCopyPrompt={handleQuickCopyPrompt}
+              onToggleFavoritePrompt={toggleFavoritePrompt}
+              onSharePrompt={(p) => setSharingPrompt(p)}
+              onNavigateToPrompts={() => setActivePage('prompts')}
+              onNavigateToArticles={() => setActivePage('articles')}
+              selectedRole={selectedRole}
+              quickCopiedId={quickCopiedId}
             />
 
             {/* 1. CLOSED-LOOP 4-STEP LEARNING ARCHITECTURE HUB */}
@@ -1505,7 +1610,10 @@ export default function App() {
               bookmarkedNewsIds={bookmarkedNewsIds}
               onToggleBookmarkNews={toggleBookmarkNews}
               onOpenNewsPage={() => setActivePage('news')}
-              onOpenPromptModal={setActivePromptModal}
+              onOpenPromptModal={(p) => {
+                handleRecordPromptView(p.id);
+                setActivePromptModal(p);
+              }}
             />
 
             {/* 4. PROMPT OF THE DAY ('PROMPT CỦA NGÀY' - AUTO TOP COPIED OR NEWEST) */}
@@ -1514,7 +1622,10 @@ export default function App() {
               favoritePromptIds={favoritePromptIds}
               comparePromptIds={comparePromptIds}
               quickCopiedId={quickCopiedId}
-              onOpenPromptModal={setActivePromptModal}
+              onOpenPromptModal={(p) => {
+                handleRecordPromptView(p.id);
+                setActivePromptModal(p);
+              }}
               onQuickCopyPrompt={handleQuickCopyPrompt}
               onToggleFavoritePrompt={toggleFavoritePrompt}
               onToggleComparePrompt={handleToggleComparePrompt}
@@ -1620,6 +1731,19 @@ export default function App() {
                             </label>
                             <button
                               type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSharingPrompt(p);
+                              }}
+                              aria-label="Chia sẻ Prompt"
+                              title="Chia sẻ Prompt: Tạo ảnh PNG hoặc sao chép link"
+                              className="absolute top-2.5 right-12 h-8 w-8 rounded-lg flex items-center justify-center border border-slate-700 bg-slate-900/75 text-slate-200 hover:bg-slate-900 hover:text-emerald-400 transition-colors cursor-pointer"
+                            >
+                              <Share2 className="h-3.5 w-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={(e) => toggleFavoritePrompt(p.id, e)}
                               aria-label="Lưu yêu thích"
                               className={`absolute top-2.5 right-2.5 h-8 w-8 rounded-lg flex items-center justify-center border transition-colors cursor-pointer ${
@@ -1669,17 +1793,31 @@ export default function App() {
                         </div>
 
                         <div className="mt-3 pt-3 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImprovePromptModal(p);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 transition-colors cursor-pointer"
-                          >
-                            <Wand2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                            <span>Gợi ý cải tiến</span>
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSharingPrompt(p);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                              title="Chia sẻ Prompt: Tạo ảnh PNG đẹp mắt hoặc sao chép link"
+                            >
+                              <Share2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span>Chia sẻ</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveImprovePromptModal(p);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 transition-colors cursor-pointer"
+                            >
+                              <Wand2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span>Cải tiến</span>
+                            </button>
+                          </div>
 
                           <AnimatedCopyButton
                             isCopied={quickCopiedId === p.id}
@@ -2567,6 +2705,19 @@ export default function App() {
 
                           <button
                             type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSharingPrompt(p);
+                            }}
+                            aria-label="Chia sẻ Prompt"
+                            title="Chia sẻ Prompt"
+                            className="absolute top-3 right-13.5 h-9 w-9 rounded-xl flex items-center justify-center border border-slate-700 bg-slate-900/75 text-slate-200 hover:bg-slate-900 hover:text-emerald-400 transition-colors cursor-pointer"
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={(e) => toggleFavoritePrompt(p.id, e)}
                             aria-label="Lưu yêu thích"
                             className={`absolute top-3 right-3 h-9 w-9 rounded-xl flex items-center justify-center border transition-colors cursor-pointer ${
@@ -2630,6 +2781,18 @@ export default function App() {
                           <ArrowRight className="w-3.5 h-3.5" />
                         </span>
                         <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSharingPrompt(p);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 px-2.5 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                            title="Chia sẻ Prompt: Tạo ảnh PNG đẹp mắt hoặc sao chép liên kết rút gọn"
+                          >
+                            <Share2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Chia sẻ</span>
+                          </button>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -3597,6 +3760,7 @@ export default function App() {
           activePromptModal ? favoritePromptIds.includes(activePromptModal.id) : false
         }
         onToggleFavorite={(id) => toggleFavoritePrompt(id)}
+        onSharePrompt={(p) => setSharingPrompt(p)}
         personalNote={activePromptModal ? promptNotes[activePromptModal.id] || '' : ''}
         onChangePersonalNote={handleUpdatePromptNote}
       />
@@ -3608,6 +3772,13 @@ export default function App() {
           activeArticleModal ? favoriteArticleIds.includes(activeArticleModal.id) : false
         }
         onToggleFavorite={(id) => toggleFavoriteArticle(id)}
+      />
+
+      <PromptShareModal
+        prompt={sharingPrompt}
+        isOpen={!!sharingPrompt}
+        onClose={() => setSharingPrompt(null)}
+        onCopiedToast={triggerCopyToast}
       />
 
       {/* CORNER TOAST NOTIFICATION FOR COPY CONFIRMATION */}
